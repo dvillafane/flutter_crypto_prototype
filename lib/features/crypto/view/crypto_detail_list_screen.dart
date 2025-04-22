@@ -1,11 +1,11 @@
 import 'dart:async';
-import 'package:flutter/material.dart'; 
-import 'package:flutter_bloc/flutter_bloc.dart'; 
-import 'package:flutter_crypto_prototype/features/crypto/bloc/crypto_event.dart'; 
-import 'package:flutter_crypto_prototype/features/crypto/bloc/crypto_state.dart'; 
-import 'package:intl/intl.dart'; 
+import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_crypto_prototype/features/crypto/bloc/crypto_event.dart';
+import 'package:flutter_crypto_prototype/features/crypto/bloc/crypto_state.dart';
+import 'package:intl/intl.dart';
 import '../bloc/crypto_bloc.dart';
-import '../../../core/models/crypto_detail.dart'; 
+import '../../../core/models/crypto_detail.dart';
 
 class CryptoDetailListScreen extends StatefulWidget {
   final bool isGuest; // Indica si el usuario es invitado
@@ -38,6 +38,9 @@ class CryptoDetailListScreenState extends State<CryptoDetailListScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final screenWidth = MediaQuery.of(context).size.width;
+    const webBreakpoint = 600;
+
     return Scaffold(
       appBar: AppBar(
         // AppBar superior
@@ -78,99 +81,103 @@ class CryptoDetailListScreenState extends State<CryptoDetailListScreen> {
             ),
           ),
         ),
-        actions: [
-          BlocBuilder<CryptoBloc, CryptoState>(
-            // Dropdown para ordenar
-            builder: (context, state) {
-              if (state is CryptoLoaded) {
-                return Padding(
-                  padding: const EdgeInsets.only(right: 8.0),
-                  child: DropdownButton<String>(
-                    value: state.sortCriteria,
-                    dropdownColor: Colors.grey[900],
-                    underline: const SizedBox(),
-                    items: const [
-                      DropdownMenuItem(
-                        value: 'priceUsd',
-                        child: Text(
-                          'Precio',
-                          style: TextStyle(color: Colors.white),
-                        ),
-                      ),
-                      DropdownMenuItem(
-                        value: 'cmcRank',
-                        child: Text(
-                          'Ranking',
-                          style: TextStyle(color: Colors.white),
-                        ),
-                      ),
-                    ],
-                    onChanged: (value) {
-                      if (value != null) {
-                        context.read<CryptoBloc>().add(
-                          ChangeSortCriteria(value),
-                        ); // Evento para cambiar orden
+        actions:
+            screenWidth <= webBreakpoint
+                ? [
+                  BlocBuilder<CryptoBloc, CryptoState>(
+                    builder: (context, state) {
+                      if (state is CryptoLoaded) {
+                        return Padding(
+                          padding: const EdgeInsets.only(right: 8.0),
+                          child: DropdownButton<String>(
+                            value: state.sortCriteria,
+                            dropdownColor: Colors.grey[900],
+                            underline: const SizedBox(),
+                            items: const [
+                              DropdownMenuItem(
+                                value: 'priceUsd',
+                                child: Text(
+                                  'Precio',
+                                  style: TextStyle(color: Colors.white),
+                                ),
+                              ),
+                              DropdownMenuItem(
+                                value: 'cmcRank',
+                                child: Text(
+                                  'Ranking',
+                                  style: TextStyle(color: Colors.white),
+                                ),
+                              ),
+                            ],
+                            onChanged: (value) {
+                              if (value != null) {
+                                context.read<CryptoBloc>().add(
+                                  ChangeSortCriteria(value),
+                                );
+                              }
+                            },
+                          ),
+                        );
                       }
+                      return const SizedBox.shrink();
                     },
                   ),
-                );
-              }
-              return const SizedBox.shrink();
-            },
-          ),
-          if (!widget.isGuest)
-            BlocBuilder<CryptoBloc, CryptoState>(
-              // Botón para alternar favoritas
-              builder: (context, state) {
-                if (state is CryptoLoaded) {
-                  return IconButton(
-                    icon: Icon(
-                      state.showFavorites
-                          ? Icons.favorite
-                          : Icons.format_list_bulleted,
-                      color: Colors.white,
+                  if (!widget.isGuest)
+                    BlocBuilder<CryptoBloc, CryptoState>(
+                      builder: (context, state) {
+                        if (state is CryptoLoaded) {
+                          return IconButton(
+                            icon: Icon(
+                              state.showFavorites
+                                  ? Icons.favorite
+                                  : Icons.format_list_bulleted,
+                              color: Colors.white,
+                            ),
+                            tooltip:
+                                state.showFavorites
+                                    ? 'Ver todas'
+                                    : 'Ver favoritas',
+                            onPressed:
+                                () => context.read<CryptoBloc>().add(
+                                  ToggleFavoritesView(),
+                                ),
+                          );
+                        }
+                        return const SizedBox.shrink();
+                      },
                     ),
-                    tooltip:
-                        state.showFavorites ? 'Ver todas' : 'Ver favoritas',
-                    onPressed:
-                        () => context.read<CryptoBloc>().add(
-                          ToggleFavoritesView(),
-                        ), // Evento para mostrar favoritas
-                  );
-                }
-                return const SizedBox.shrink();
-              },
-            ),
-          BlocBuilder<CryptoBloc, CryptoState>(
-            // Botón para pausar/reanudar WebSocket
-            builder: (context, state) {
-              if (state is CryptoLoaded) {
-                return IconButton(
-                  icon: Icon(
-                    state.isWebSocketConnected ? Icons.pause : Icons.play_arrow,
-                    color: Colors.white,
+                  BlocBuilder<CryptoBloc, CryptoState>(
+                    builder: (context, state) {
+                      if (state is CryptoLoaded) {
+                        return IconButton(
+                          icon: Icon(
+                            state.isWebSocketConnected
+                                ? Icons.pause
+                                : Icons.play_arrow,
+                            color: Colors.white,
+                          ),
+                          tooltip:
+                              state.isWebSocketConnected
+                                  ? 'Detener actualizaciones'
+                                  : 'Reanudar actualizaciones',
+                          onPressed: () {
+                            if (state.isWebSocketConnected) {
+                              context.read<CryptoBloc>().add(
+                                DisconnectWebSocket(),
+                              );
+                            } else {
+                              context.read<CryptoBloc>().add(
+                                ConnectWebSocket(),
+                              );
+                            }
+                          },
+                        );
+                      }
+                      return const SizedBox.shrink();
+                    },
                   ),
-                  tooltip:
-                      state.isWebSocketConnected
-                          ? 'Detener actualizaciones'
-                          : 'Reanudar actualizaciones',
-                  onPressed: () {
-                    if (state.isWebSocketConnected) {
-                      context.read<CryptoBloc>().add(
-                        DisconnectWebSocket(),
-                      ); // Evento para detener WS
-                    } else {
-                      context.read<CryptoBloc>().add(
-                        ConnectWebSocket(),
-                      ); // Evento para iniciar WS
-                    }
-                  },
-                );
-              }
-              return const SizedBox.shrink();
-            },
-          ),
-        ],
+                ]
+                : [], // En web, los filtros estarán en el cuerpo
       ),
       body: BlocBuilder<CryptoBloc, CryptoState>(
         // Cuerpo de la pantalla
@@ -180,14 +187,104 @@ class CryptoDetailListScreenState extends State<CryptoDetailListScreen> {
           } else if (state is CryptoLoaded) {
             return Column(
               children: [
-                if (state.isUpdating)
-                  const LinearProgressIndicator(), // Indicador de actualización
-                Expanded(
-                  child: _buildCryptoList(
-                    state.cryptos,
-                    state,
-                  ), // Construye la lista de criptos
-                ),
+                if (screenWidth > webBreakpoint) // Filtros en web
+                  Padding(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 8,
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.end,
+                      children: [
+                        DropdownButton<String>(
+                          value: state.sortCriteria,
+                          dropdownColor: Colors.grey[900],
+                          underline: const SizedBox(),
+                          items: const [
+                            DropdownMenuItem(
+                              value: 'priceUsd',
+                              child: Text(
+                                'Ordenar por Precio',
+                                style: TextStyle(color: Colors.white),
+                              ),
+                            ),
+                            DropdownMenuItem(
+                              value: 'cmcRank',
+                              child: Text(
+                                'Ordenar por Ranking',
+                                style: TextStyle(color: Colors.white),
+                              ),
+                            ),
+                          ],
+                          onChanged: (value) {
+                            if (value != null) {
+                              context.read<CryptoBloc>().add(
+                                ChangeSortCriteria(value),
+                              );
+                            }
+                          },
+                        ),
+                        const SizedBox(width: 10),
+                        if (!widget.isGuest)
+                          ElevatedButton.icon(
+                            onPressed:
+                                () => context.read<CryptoBloc>().add(
+                                  ToggleFavoritesView(),
+                                ),
+                            icon: Icon(
+                              state.showFavorites
+                                  ? Icons.favorite
+                                  : Icons.format_list_bulleted,
+                              color: Colors.white,
+                            ),
+                            label: Text(
+                              state.showFavorites
+                                  ? 'Ver Todas'
+                                  : 'Ver Favoritas',
+                              style: const TextStyle(color: Colors.white),
+                            ),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.grey[800],
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                            ),
+                          ),
+                        const SizedBox(width: 10),
+                        ElevatedButton.icon(
+                          onPressed: () {
+                            if (state.isWebSocketConnected) {
+                              context.read<CryptoBloc>().add(
+                                DisconnectWebSocket(),
+                              );
+                            } else {
+                              context.read<CryptoBloc>().add(
+                                ConnectWebSocket(),
+                              );
+                            }
+                          },
+                          icon: Icon(
+                            state.isWebSocketConnected
+                                ? Icons.pause
+                                : Icons.play_arrow,
+                            color: Colors.white,
+                          ),
+                          label: Text(
+                            state.isWebSocketConnected ? 'Pausar' : 'Reanudar',
+                            style: const TextStyle(color: Colors.white),
+                          ),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.grey[800],
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                if (state.isUpdating) const LinearProgressIndicator(),
+                Expanded(child: _buildCryptoList(state.cryptos, state)),
               ],
             );
           } else if (state is CryptoError) {
@@ -241,43 +338,75 @@ class CryptoDetailListScreenState extends State<CryptoDetailListScreen> {
       );
     }
 
-    return ListView.builder(
-      // Lista de criptomonedas
-      itemCount: filtered.length,
-      itemBuilder: (context, i) {
-        final detail = filtered[i];
-        final isFav = state.favoriteSymbols.contains(
-          detail.symbol,
-        ); // Verifica si es favorita
-        return Card(
-          color: Colors.grey[900],
-          child: ListTile(
-            leading: Image.network(
-              // Logo de la cripto
-              detail.logoUrl,
-              width: 32,
-              height: 32,
-              errorBuilder:
-                  (_, __, ___) => const Icon(Icons.error, color: Colors.red),
-            ),
-            title: Text(
-              detail.name,
-              style: const TextStyle(color: Colors.white),
-            ),
-            subtitle: AnimatedDefaultTextStyle(
-              duration: const Duration(milliseconds: 350),
-              style: TextStyle(
-                color: state.priceColors[detail.symbol] ?? Colors.white70,
-              ),
-              child: Text(
-                '\$${numberFormat.format(detail.priceUsd)} USD',
-              ), // Precio actual
-            ),
-            trailing:
-                widget.isGuest
-                    ? null
-                    : IconButton(
-                      // Botón para marcar como favorita
+    // Obtener el ancho de la pantalla para decidir el diseño
+    final screenWidth = MediaQuery.of(context).size.width;
+    const webBreakpoint =
+        600; // Punto de corte para considerar una pantalla "web"
+
+    // Si el ancho es mayor al breakpoint, usamos GridView (web); si no, ListView (móvil)
+    if (screenWidth > webBreakpoint) {
+      return GridView.builder(
+        padding: const EdgeInsets.all(8.0),
+        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+          crossAxisCount: 3, // 3 columnas en pantallas grandes
+          childAspectRatio: 3, // Relación ancho/alto de cada tarjeta
+          crossAxisSpacing: 10,
+          mainAxisSpacing: 10,
+        ),
+        itemCount: filtered.length,
+        itemBuilder: (context, i) {
+          final detail = filtered[i];
+          final isFav = state.favoriteSymbols.contains(detail.symbol);
+          return Card(
+            color: Colors.grey[900],
+            child: Padding(
+              padding: const EdgeInsets.all(8.0),
+              child: Row(
+                children: [
+                  Image.network(
+                    detail.logoUrl,
+                    width: 32,
+                    height: 32,
+                    errorBuilder:
+                        (_, __, ___) =>
+                            const Icon(Icons.error, color: Colors.red),
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Text(
+                          detail.name,
+                          style: const TextStyle(color: Colors.white),
+                        ),
+                        AnimatedDefaultTextStyle(
+                          duration: const Duration(milliseconds: 350),
+                          style: TextStyle(
+                            color:
+                                state.priceColors[detail.symbol] ??
+                                Colors.white70,
+                          ),
+                          child: Text(
+                            '\$${numberFormat.format(detail.priceUsd)} USD',
+                          ),
+                        ),
+                        Text(
+                          '24h: ${detail.percentChange24h.toStringAsFixed(2)}%',
+                          style: TextStyle(
+                            color:
+                                detail.percentChange24h >= 0
+                                    ? Colors.green
+                                    : Colors.red,
+                            fontSize: 12,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  if (!widget.isGuest)
+                    IconButton(
                       icon: Icon(
                         isFav ? Icons.favorite : Icons.favorite_border,
                         color: isFav ? Colors.red : Colors.white70,
@@ -287,33 +416,77 @@ class CryptoDetailListScreenState extends State<CryptoDetailListScreen> {
                             ToggleFavoriteSymbol(detail.symbol),
                           ),
                     ),
-            onTap: () {
-              if (widget.isGuest) {
-                if (!_isSnackBarShown) {
-                  _isSnackBarShown = true;
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('Para ver más detalles, inicia sesión'),
-                    ),
-                  );
-                  _debounceTimer?.cancel();
-                  _debounceTimer = Timer(const Duration(seconds: 5), () {
-                    setState(() {
-                      _isSnackBarShown = false;
+                ],
+              ),
+            ),
+          );
+        },
+      );
+    } else {
+      return ListView.builder(
+        itemCount: filtered.length,
+        itemBuilder: (context, i) {
+          final detail = filtered[i];
+          final isFav = state.favoriteSymbols.contains(detail.symbol);
+          return Card(
+            color: Colors.grey[900],
+            child: ListTile(
+              leading: Image.network(
+                detail.logoUrl,
+                width: 32,
+                height: 32,
+                errorBuilder:
+                    (_, __, ___) => const Icon(Icons.error, color: Colors.red),
+              ),
+              title: Text(
+                detail.name,
+                style: const TextStyle(color: Colors.white),
+              ),
+              subtitle: AnimatedDefaultTextStyle(
+                duration: const Duration(milliseconds: 350),
+                style: TextStyle(
+                  color: state.priceColors[detail.symbol] ?? Colors.white70,
+                ),
+                child: Text('\$${numberFormat.format(detail.priceUsd)} USD'),
+              ),
+              trailing:
+                  widget.isGuest
+                      ? null
+                      : IconButton(
+                        icon: Icon(
+                          isFav ? Icons.favorite : Icons.favorite_border,
+                          color: isFav ? Colors.red : Colors.white70,
+                        ),
+                        onPressed:
+                            () => context.read<CryptoBloc>().add(
+                              ToggleFavoriteSymbol(detail.symbol),
+                            ),
+                      ),
+              onTap: () {
+                if (widget.isGuest) {
+                  if (!_isSnackBarShown) {
+                    _isSnackBarShown = true;
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('Para ver más detalles, inicia sesión'),
+                      ),
+                    );
+                    _debounceTimer?.cancel();
+                    _debounceTimer = Timer(const Duration(seconds: 5), () {
+                      setState(() {
+                        _isSnackBarShown = false;
+                      });
                     });
-                  });
+                  }
+                } else {
+                  _showCryptoDetailDialog(context, detail);
                 }
-              } else {
-                _showCryptoDetailDialog(
-                  context,
-                  detail,
-                ); // Muestra detalles si no es invitado
-              }
-            },
-          ),
-        );
-      },
-    );
+              },
+            ),
+          );
+        },
+      );
+    }
   }
 
   void _showCryptoDetailDialog(BuildContext context, CryptoDetail detail) {

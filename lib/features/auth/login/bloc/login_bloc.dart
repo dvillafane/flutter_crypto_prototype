@@ -12,9 +12,9 @@ class LoginBloc extends Bloc<LoginEvent, LoginState> {
   final FirebaseFirestore _firestore;
 
   LoginBloc({FirebaseAuth? auth, FirebaseFirestore? firestore})
-      : _auth = auth ?? FirebaseAuth.instance,
-        _firestore = firestore ?? FirebaseFirestore.instance,
-        super(LoginInitial()) {
+    : _auth = auth ?? FirebaseAuth.instance,
+      _firestore = firestore ?? FirebaseFirestore.instance,
+      super(LoginInitial()) {
     on<LoginSubmitted>(_onLoginSubmitted);
     on<LoginGoogleSubmitted>(_onLoginGoogleSubmitted);
   }
@@ -72,12 +72,18 @@ class LoginBloc extends Bloc<LoginEvent, LoginState> {
   ) async {
     emit(LoginLoading());
     try {
-      final GoogleSignInAccount? googleUser = await GoogleSignIn().signIn();
+      // Inicializa GoogleSignIn con los scopes necesarios
+      final GoogleSignIn googleSignIn = GoogleSignIn(
+        scopes: ['email', 'profile'], // Scopes mínimos para email y perfil
+      );
+
+      final GoogleSignInAccount? googleUser = await googleSignIn.signIn();
       if (googleUser == null) {
         emit(const LoginFailure('Inicio de sesión con Google cancelado'));
         return;
       }
-      final GoogleSignInAuthentication googleAuth = await googleUser.authentication;
+      final GoogleSignInAuthentication googleAuth =
+          await googleUser.authentication;
       final credential = GoogleAuthProvider.credential(
         accessToken: googleAuth.accessToken,
         idToken: googleAuth.idToken,
@@ -87,7 +93,8 @@ class LoginBloc extends Bloc<LoginEvent, LoginState> {
 
       if (user != null) {
         final name = googleUser.displayName ?? 'Usuario de Google';
-        final userDoc = await _firestore.collection('users').doc(user.uid).get();
+        final userDoc =
+            await _firestore.collection('users').doc(user.uid).get();
         if (!userDoc.exists) {
           await _firestore.collection('users').doc(user.uid).set({
             'name': name,

@@ -65,11 +65,7 @@ class _MyAppState extends State<MyApp> {
   void setupWebMessaging() async {
     final messaging = FirebaseMessaging.instance;
     // Solicitar permisos para notificaciones en la web
-    await messaging.requestPermission(
-      alert: true,
-      badge: true,
-      sound: true,
-    );
+    await messaging.requestPermission(alert: true, badge: true, sound: true);
     // Obtener y enviar token en la web
     String? token = await messaging.getToken();
     if (token != null) {
@@ -85,6 +81,9 @@ class _MyAppState extends State<MyApp> {
 
   @override
   Widget build(BuildContext context) {
+    final screenWidth = MediaQuery.of(context).size.width;
+    const webBreakpoint = 600;
+
     return MaterialApp(
       title: 'Cyptos 2.0 Demo',
       theme: ThemeData(
@@ -95,11 +94,24 @@ class _MyAppState extends State<MyApp> {
           backgroundColor: Colors.black,
           titleTextStyle: TextStyle(color: Colors.white, fontSize: 20),
         ),
-        textTheme: const TextTheme(
-          bodyMedium: TextStyle(color: Colors.white),
-          bodySmall: TextStyle(color: Colors.white70),
+        textTheme: TextTheme(
+          bodyMedium: TextStyle(
+            color: Colors.white,
+            fontSize: screenWidth > webBreakpoint ? 16 : 14,
+          ),
+          bodySmall: TextStyle(
+            color: Colors.white70,
+            fontSize: screenWidth > webBreakpoint ? 14 : 12,
+          ),
         ),
-        cardTheme: CardTheme(color: Colors.grey[900], elevation: 4),
+        cardTheme: CardTheme(
+          color: Colors.grey[900],
+          elevation: 4,
+          margin: EdgeInsets.symmetric(
+            horizontal: screenWidth > webBreakpoint ? 8 : 4,
+            vertical: screenWidth > webBreakpoint ? 6 : 3,
+          ),
+        ),
         dialogTheme: const DialogTheme(
           titleTextStyle: TextStyle(color: Colors.white, fontSize: 18),
           contentTextStyle: TextStyle(color: Colors.white70),
