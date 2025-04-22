@@ -43,7 +43,9 @@ class HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
-    // Provee el BLoC de criptomonedas al árbol de widgets
+    final screenWidth = MediaQuery.of(context).size.width;
+    const webBreakpoint = 600;
+
     return BlocProvider(
       create:
           (context) => CryptoBloc(
@@ -57,24 +59,60 @@ class HomeScreenState extends State<HomeScreen> {
             // Se inyecta el servicio de precios en tiempo real
             pricesService: WebSocketPricesService(),
           ),
-      child: Scaffold(
-        // Muestra la pantalla correspondiente al índice actual
-        body: _screens[_selectedIndex],
-        // Barra inferior de navegación
-        bottomNavigationBar: BottomNavigationBar(
-          backgroundColor: Colors.black,
-          selectedItemColor: Colors.white,
-          unselectedItemColor: Colors.grey,
-          currentIndex: _selectedIndex,
-          onTap: _onItemTapped, // Llama al método al hacer tap
-          items: const [
-            // Ítem para la pantalla de inicio
-            BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
-            // Ítem para la pantalla de perfil
-            BottomNavigationBarItem(icon: Icon(Icons.person), label: 'Perfil'),
-          ],
-        ),
-      ),
+      child:
+          screenWidth > webBreakpoint
+              ? Scaffold(
+                body: Row(
+                  children: [
+                    // Barra lateral para web
+                    NavigationRail(
+                      backgroundColor: Colors.black,
+                      selectedIndex: _selectedIndex,
+                      onDestinationSelected: _onItemTapped,
+                      labelType: NavigationRailLabelType.all,
+                      selectedLabelTextStyle: const TextStyle(
+                        color: Colors.white,
+                      ),
+                      unselectedLabelTextStyle: const TextStyle(
+                        color: Colors.grey,
+                      ),
+                      destinations: const [
+                        NavigationRailDestination(
+                          icon: Icon(Icons.home, color: Colors.grey),
+                          selectedIcon: Icon(Icons.home, color: Colors.white),
+                          label: Text('Home'),
+                        ),
+                        NavigationRailDestination(
+                          icon: Icon(Icons.person, color: Colors.grey),
+                          selectedIcon: Icon(Icons.person, color: Colors.white),
+                          label: Text('Perfil'),
+                        ),
+                      ],
+                    ),
+                    Expanded(child: _screens[_selectedIndex]),
+                  ],
+                ),
+              )
+              : Scaffold(
+                body: _screens[_selectedIndex],
+                bottomNavigationBar: BottomNavigationBar(
+                  backgroundColor: Colors.black,
+                  selectedItemColor: Colors.white,
+                  unselectedItemColor: Colors.grey,
+                  currentIndex: _selectedIndex,
+                  onTap: _onItemTapped,
+                  items: const [
+                    BottomNavigationBarItem(
+                      icon: Icon(Icons.home),
+                      label: 'Home',
+                    ),
+                    BottomNavigationBarItem(
+                      icon: Icon(Icons.person),
+                      label: 'Perfil',
+                    ),
+                  ],
+                ),
+              ),
     );
   }
 }

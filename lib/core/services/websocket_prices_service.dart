@@ -1,12 +1,13 @@
 import 'dart:async';
-import 'dart:convert'; 
-import 'package:flutter/foundation.dart' show debugPrint; 
+import 'dart:convert';
+import 'package:flutter/foundation.dart' show kIsWeb, debugPrint;
+import 'package:web_socket_channel/web_socket_channel.dart';
 import 'package:web_socket_channel/io.dart';
+import 'package:web_socket_channel/html.dart';
 
 class WebSocketPricesService {
-  IOWebSocketChannel?
-  _channel; // Canal WebSocket para conectarse al servidor de Binance.
-  bool _isConnected = false; // Indica si ya está conectado o no.
+  WebSocketChannel? _channel;
+  bool _isConnected = false;
   final StreamController<Map<String, double>> _pricesController =
       StreamController.broadcast();
   // Controlador de stream para emitir precios actualizados. Se usa broadcast para múltiples escuchas.
@@ -16,11 +17,17 @@ class WebSocketPricesService {
 
   void connect() {
     if (_isConnected || _channel != null) return;
-    // Si ya está conectado o el canal no es nulo, no vuelve a conectarse.
 
-    _channel = IOWebSocketChannel.connect(
-      'wss://stream.binance.com:9443/ws/!ticker@arr',
-    ); // Conexión al WebSocket público de Binance que transmite datos de todos los pares.
+    // Use platform-appropriate WebSocketChannel
+    if (kIsWeb) {
+      _channel = HtmlWebSocketChannel.connect(
+        Uri.parse('wss://stream.binance.com:9443/ws/!ticker@arr'),
+      );
+    } else {
+      _channel = IOWebSocketChannel.connect(
+        Uri.parse('wss://stream.binance.com:9443/ws/!ticker@arr'),
+      );
+    }
 
     _isConnected = true; // Marca como conectado.
     debugPrint('WebSocket conectado'); // Imprime que se ha conectado.
