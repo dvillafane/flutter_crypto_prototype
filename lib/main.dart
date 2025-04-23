@@ -1,25 +1,28 @@
-import 'package:flutter/foundation.dart' show kIsWeb;
-import 'package:firebase_core/firebase_core.dart';
-import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
-import 'package:flutter_crypto_prototype/firebase_options.dart';
-import 'package:flutter_dotenv/flutter_dotenv.dart';
-import 'package:firebase_auth/firebase_auth.dart';
-import 'package:firebase_messaging/firebase_messaging.dart';
-import 'core/services/noti_service.dart';
-import 'core/services/token_service.dart';
-import 'features/auth/login/view/login_screen.dart';
-import 'features/home/view/home_screen.dart';
+import 'package:flutter/foundation.dart' show kIsWeb; // Importación para verificar si estamos en la web
+import 'package:firebase_core/firebase_core.dart'; // Inicialización de Firebase
+import 'package:flutter/material.dart'; // Paquete básico para aplicaciones Flutter
+import 'package:flutter/services.dart'; // Paquete para controlar las configuraciones del sistema
+import 'package:flutter_crypto_prototype/firebase_options.dart'; // Opciones de Firebase específicas para cada plataforma
+import 'package:flutter_dotenv/flutter_dotenv.dart'; // Paquete para cargar variables de entorno
+import 'package:firebase_auth/firebase_auth.dart'; // Firebase Authentication
+import 'package:firebase_messaging/firebase_messaging.dart'; // Firebase Messaging para notificaciones push
+import 'core/services/noti_service.dart'; // Servicio para manejar notificaciones
+import 'core/services/token_service.dart'; // Servicio para manejar tokens de Firebase
+import 'features/auth/login/view/login_screen.dart'; // Pantalla de login
+import 'features/home/view/home_screen.dart'; // Pantalla principal de la app
 
+// Método principal de la app
 Future<void> main() async {
-  WidgetsFlutterBinding.ensureInitialized();
+  WidgetsFlutterBinding.ensureInitialized(); // Asegura que los widgets están inicializados
 
   try {
+    // Cargar archivo .env para acceder a las variables de entorno
     await dotenv.load(fileName: ".env");
   } catch (e) {
-    debugPrint("Error al cargar el archivo .env: $e");
+    debugPrint("Error al cargar el archivo .env: $e"); // Manejo de errores al cargar .env
   }
 
+  // Inicializar Firebase
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
 
   if (!kIsWeb) {
@@ -28,7 +31,7 @@ Future<void> main() async {
     FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
   }
 
-  // Configurar orientación solo en plataformas móviles
+  // Configuración de orientación solo en plataformas móviles (evitar la rotación en la web)
   if (!kIsWeb) {
     await SystemChrome.setPreferredOrientations([
       DeviceOrientation.portraitUp,
@@ -36,9 +39,10 @@ Future<void> main() async {
     ]);
   }
 
-  runApp(const MyApp());
+  runApp(const MyApp()); // Iniciar la aplicación
 }
 
+// Widget principal de la aplicación
 class MyApp extends StatefulWidget {
   const MyApp({super.key});
 
@@ -47,7 +51,7 @@ class MyApp extends StatefulWidget {
 }
 
 class _MyAppState extends State<MyApp> {
-  // Agregar un GlobalKey para el ScaffoldMessenger
+  // GlobalKey para mostrar mensajes de notificación (SnackBars) globalmente
   final GlobalKey<ScaffoldMessengerState> _scaffoldMessengerKey =
       GlobalKey<ScaffoldMessengerState>();
 
@@ -55,7 +59,7 @@ class _MyAppState extends State<MyApp> {
   void initState() {
     super.initState();
     if (!kIsWeb) {
-      // Configurar notificaciones y tokens solo en plataformas móviles
+      // Configuración de Firebase y notificaciones solo en plataformas móviles
       obtenerYEnviarTokenFCM();
       obtenerYEnviarFID();
       listenTokenRefresh();
@@ -63,31 +67,32 @@ class _MyAppState extends State<MyApp> {
     } else {
       // Configurar Firebase Messaging para la web
       setupWebMessaging();
-      // Agregar listener para notificaciones en primer plano en la web
+      // Configurar la recepción de notificaciones en primer plano en la web
       setupForegroundMessages();
     }
   }
 
+  // Método para configurar el manejo de mensajes en la web
   void setupWebMessaging() async {
     final messaging = FirebaseMessaging.instance;
-    // Solicitar permisos para notificaciones en la web
+    // Solicitar permisos para recibir notificaciones
     await messaging.requestPermission(alert: true, badge: true, sound: true);
-    // Obtener y enviar token en la web con VAPID key
+    // Obtener el token FCM para la web usando la clave VAPID
     String? token = await messaging.getToken(
       vapidKey:
-          dotenv.env['VAPID_KEY'] ?? '', // Carga la clave VAPID desde .env
+          dotenv.env['VAPID_KEY'] ?? '', // Obtener la clave VAPID desde el archivo .env
     );
     if (token != null) {
-      debugPrint('Web FCM Token: $token');
-      await enviarTokenAFirestore(token);
+      debugPrint('Web FCM Token: $token'); // Mostrar el token en consola
+      await enviarTokenAFirestore(token); // Enviar el token a Firestore
     } else {
       debugPrint('No se pudo obtener el token FCM para la web.');
     }
-    // Escuchar renovaciones de token
+    // Escuchar renovaciones del token FCM
     messaging.onTokenRefresh
         .listen((newToken) async {
           debugPrint('Web FCM Token renovado: $newToken');
-          await enviarTokenAFirestore(newToken);
+          await enviarTokenAFirestore(newToken); // Enviar el nuevo token a Firestore
         })
         .onError((error) {
           debugPrint('Error al renovar el token FCM: $error');
@@ -102,7 +107,7 @@ class _MyAppState extends State<MyApp> {
             'Notificación en primer plano recibida: ${message.notification?.title}',
           );
           if (message.notification != null) {
-            // Usar el GlobalKey para mostrar el SnackBar
+            // Mostrar un SnackBar con el contenido de la notificación
             _scaffoldMessengerKey.currentState?.showSnackBar(
               SnackBar(
                 content: Text(
@@ -127,14 +132,14 @@ class _MyAppState extends State<MyApp> {
   @override
   Widget build(BuildContext context) {
     final screenWidth = MediaQuery.of(context).size.width;
-    const webBreakpoint = 600;
+    const webBreakpoint = 600; // Definir el punto de ruptura para la versión web
 
     return MaterialApp(
-      title: 'Cyptos 2.0 Demo',
+      title: 'Cyptos 2.0 Demo', // Título de la aplicación
       // Asignar el GlobalKey al ScaffoldMessenger
       scaffoldMessengerKey: _scaffoldMessengerKey,
       theme: ThemeData(
-        brightness: Brightness.dark,
+        brightness: Brightness.dark, // Configurar el tema oscuro
         primaryColor: Colors.black,
         scaffoldBackgroundColor: Colors.black,
         appBarTheme: const AppBarTheme(
@@ -165,25 +170,26 @@ class _MyAppState extends State<MyApp> {
         ),
         useMaterial3: true,
       ),
-      home: const AuthCheck(),
+      home: const AuthCheck(), // Pantalla inicial que verifica si el usuario está autenticado
     );
   }
 }
 
+// Widget que verifica si el usuario está autenticado y muestra la pantalla correspondiente
 class AuthCheck extends StatelessWidget {
   const AuthCheck({super.key});
 
   @override
   Widget build(BuildContext context) {
     return StreamBuilder<User?>(
-      stream: FirebaseAuth.instance.authStateChanges(),
+      stream: FirebaseAuth.instance.authStateChanges(), // Escucha cambios en el estado de autenticación
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return const Scaffold(
-            body: Center(child: CircularProgressIndicator()),
+            body: Center(child: CircularProgressIndicator()), // Muestra un indicador de carga mientras espera
           );
         }
-        return snapshot.hasData ? const HomeScreen() : const LoginPage();
+        return snapshot.hasData ? const HomeScreen() : const LoginPage(); // Muestra HomeScreen si el usuario está autenticado, de lo contrario muestra LoginPage
       },
     );
   }
