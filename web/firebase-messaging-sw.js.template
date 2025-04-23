@@ -1,8 +1,8 @@
-// Primero importar
+// Importar los scripts necesarios de Firebase para el servicio de mensajería en segundo plano
 importScripts('https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js');
 importScripts('https://www.gstatic.com/firebasejs/10.14.1/firebase-messaging-compat.js');
 
-// Usar compat
+// Inicializar Firebase usando las credenciales del proyecto (esto es necesario para configurar la mensajería)
 firebase.initializeApp({
   apiKey: "YOUR_API_KEY",
   authDomain: "YOUR_AUTH_DOMAIN",
@@ -10,18 +10,22 @@ firebase.initializeApp({
   storageBucket: "YOUR_STORAGE_BUCKET",
   messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
   appId: "YOUR_APP_ID",
-  measurementId: "YOUR_MEASUREMENT_ID"
 });
 
+// Obtener una referencia al servicio de mensajería de Firebase
 const messaging = firebase.messaging();
 
+// Configurar el comportamiento cuando se recibe una notificación en segundo plano
 messaging.onBackgroundMessage((payload) => {
+  // Imprimir la carga útil del mensaje en la consola para depuración
   console.log('[firebase-messaging-sw.js] Received background message ', payload);
+  
+  // Extraer el título y el cuerpo de la notificación del payload
   const notificationTitle = payload.notification.title;
   const notificationOptions = {
-    body: payload.notification.body,
-    icon: '/icons/Icon-192.png',
+    body: payload.notification.body, // Cuerpo de la notificación
   };
 
+  // Mostrar la notificación en la pantalla del usuario
   self.registration.showNotification(notificationTitle, notificationOptions);
 });

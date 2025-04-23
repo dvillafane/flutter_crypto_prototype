@@ -7,6 +7,7 @@ import 'package:equatable/equatable.dart';
 // Clase base para los eventos del BLoC
 abstract class CryptoEvent extends Equatable {
   const CryptoEvent();
+  
   @override
   List<Object?> get props => [];
 }
@@ -17,7 +18,9 @@ class LoadCryptos extends CryptoEvent {}
 // Evento que se dispara cuando llegan nuevos precios del WebSocket
 class PricesUpdated extends CryptoEvent {
   final Map<String, double> prices;
+
   const PricesUpdated({required this.prices});
+
   @override
   List<Object?> get props => [prices];
 }
@@ -31,7 +34,9 @@ class DisconnectWebSocket extends CryptoEvent {}
 // Evento para marcar o desmarcar una crypto como favorita
 class ToggleFavoriteSymbol extends CryptoEvent {
   final String symbol;
+
   const ToggleFavoriteSymbol(this.symbol);
+
   @override
   List<Object?> get props => [symbol];
 }
@@ -39,10 +44,15 @@ class ToggleFavoriteSymbol extends CryptoEvent {
 // Evento para alternar entre vista de todas y vista de favoritas
 class ToggleFavoritesView extends CryptoEvent {}
 
+// Evento para cambiar el criterio de ordenamiento de las criptomonedas
 class ChangeSortCriteria extends CryptoEvent {
   final String criteria;
+
   const ChangeSortCriteria(this.criteria);
+
   @override
   List<Object?> get props => [criteria];
 }
-class AutoUpdateCryptos extends CryptoEvent {} // Nuevo evento para actualización automática
+
+// Nuevo evento para actualización automática de criptomonedas
+class AutoUpdateCryptos extends CryptoEvent {}

@@ -13,11 +13,13 @@ import 'crypto_state.dart';
 /// ----------------------------
 
 class CryptoBloc extends Bloc<CryptoEvent, CryptoState> {
+  // Servicios para datos de criptomonedas y precios en tiempo real
   final CryptoDetailService _cryptoService;
   final WebSocketPricesService _pricesService;
   final String userId;
   final bool isGuest;
 
+  // Mapa para almacenar precios anteriores
   final Map<String, double> _previousPrices = {};
 
   // Suscripción al stream del WebSocket
@@ -26,6 +28,7 @@ class CryptoBloc extends Bloc<CryptoEvent, CryptoState> {
   // Temporizador para actualización automática
   Timer? _updateTimer;
 
+  // Constructor del BLoC
   CryptoBloc({
     required this.userId,
     required CryptoDetailService cryptoService,
@@ -44,8 +47,11 @@ class CryptoBloc extends Bloc<CryptoEvent, CryptoState> {
     on<ChangeSortCriteria>(_onChangeSortCriteria);
     on<AutoUpdateCryptos>(_onAutoUpdateCryptos);
 
+    // Evento inicial de carga
     add(LoadCryptos());
-    _setupAutoUpdateTimer(); // Configuramos el temporizador basado en Firestore
+
+    // Configuramos el temporizador basado en Firestore
+    _setupAutoUpdateTimer();
   }
 
   // Nueva función para configurar el temporizador basado en el timestamp de Firestore
@@ -89,6 +95,7 @@ class CryptoBloc extends Bloc<CryptoEvent, CryptoState> {
     });
   }
 
+  // Carga los símbolos favoritos desde Firestore
   Future<Set<String>> _loadFavoriteSymbols(String userId) async {
     if (isGuest) return {};
     final doc = await FirebaseFirestore.instance.collection('users').doc(userId).get();
@@ -212,6 +219,7 @@ class CryptoBloc extends Bloc<CryptoEvent, CryptoState> {
     }
   }
 
+  // Manejo del evento ChangeSortCriteria
   void _onChangeSortCriteria(ChangeSortCriteria event, Emitter<CryptoState> emit) {
     final currentState = state;
     if (currentState is CryptoLoaded) {
@@ -233,6 +241,7 @@ class CryptoBloc extends Bloc<CryptoEvent, CryptoState> {
     }
   }
 
+  // Manejo del evento ConnectWebSocket
   void _onConnectWebSocket(ConnectWebSocket event, Emitter<CryptoState> emit) {
     final currentState = state;
     if (currentState is CryptoLoaded && !currentState.isWebSocketConnected) {
@@ -255,6 +264,7 @@ class CryptoBloc extends Bloc<CryptoEvent, CryptoState> {
     }
   }
 
+  // Manejo del evento DisconnectWebSocket
   void _onDisconnectWebSocket(DisconnectWebSocket event, Emitter<CryptoState> emit) {
     final currentState = state;
     if (currentState is CryptoLoaded && currentState.isWebSocketConnected) {
@@ -266,6 +276,7 @@ class CryptoBloc extends Bloc<CryptoEvent, CryptoState> {
     }
   }
 
+  // Manejo del evento ToggleFavoriteSymbol
   void _onToggleFavoriteSymbol(ToggleFavoriteSymbol event, Emitter<CryptoState> emit) {
     if (isGuest) return;
     final currentState = state;
@@ -279,6 +290,7 @@ class CryptoBloc extends Bloc<CryptoEvent, CryptoState> {
     }
   }
 
+  // Manejo del evento ToggleFavoritesView
   void _onToggleFavoritesView(ToggleFavoritesView event, Emitter<CryptoState> emit) {
     final currentState = state;
     if (currentState is CryptoLoaded) {
@@ -310,7 +322,7 @@ class CryptoBloc extends Bloc<CryptoEvent, CryptoState> {
           _previousPrices[crypto.symbol] = crypto.priceUsd;
         }
         debugPrint('Emitting nuevos datos actualizados');
-        
+
         // Actualizamos el timestamp en Firestore
         await FirebaseFirestore.instance.collection('crypto_updates').doc('last_update').set({
           'timestamp': FieldValue.serverTimestamp(),
@@ -328,6 +340,7 @@ class CryptoBloc extends Bloc<CryptoEvent, CryptoState> {
     }
   }
 
+  // Método override para liberar recursos
   @override
   Future<void> close() {
     _pricesSubscription?.cancel();

@@ -1,24 +1,47 @@
 <!DOCTYPE html>
 <html>
+
 <head>
   <base href="/">
 
+  <!-- Definir la codificación de caracteres del documento -->
   <meta charset="UTF-8">
+  
+  <!-- Configurar la compatibilidad con el modo de navegador más moderno (Edge) -->
   <meta content="IE=Edge" http-equiv="X-UA-Compatible">
+  
+  <!-- Configuración del viewport para garantizar la responsividad en dispositivos móviles -->
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <!-- Meta descripción de la página -->
   <meta name="description" content="Crypto Binance: Real-time cryptocurrency prices and trading">
+  
+  <!-- Palabras clave relacionadas con la página, para SEO -->
   <meta name="keywords" content="cryptocurrency, binance, flutter, trading, prices">
 
-  <meta name="google-signin-client_id" content="88532722027-lumq66j6k0d7m3c89kukgt9j5gbok0q7.apps.googleusercontent.com">
-  
+  <!-- Configuración del cliente de Google Sign-In (usado para autenticación de Google) -->
+  <meta name="google-signin-client_id"
+    content="88532722027-lumq66j6k0d7m3c89kukgt9j5gbok0q7.apps.googleusercontent.com">
+
+  <!-- Permite que la página sea una aplicación web móvil -->
   <meta name="mobile-web-app-capable" content="yes">
+  
+  <!-- Estilo de la barra de estado para iOS -->
   <meta name="apple-mobile-web-app-status-bar-style" content="black">
+  
+  <!-- Título de la aplicación para iOS -->
   <meta name="apple-mobile-web-app-title" content="Crypto Binance">
+  
+  <!-- Icono de la aplicación para dispositivos Apple -->
   <link rel="apple-touch-icon" href="icons/Icon-192.png">
 
-  <link rel="icon" type="image/png" href="favicon.png"/>
+  <!-- Icono de la página para la web -->
+  <link rel="icon" type="image/png" href="favicon.png" />
+  
+  <!-- Archivo manifest.json que describe la aplicación web -->
   <link rel="manifest" href="manifest.json">
 
+  <!-- Registro del Service Worker para permitir notificaciones push en la web -->
   <script>
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker.register('/firebase-messaging-sw.js')
@@ -31,9 +54,13 @@
     }
   </script>
 
+  <!-- Título de la página -->
   <title>Crypto Binance</title>
 </head>
+
 <body>
+  <!-- Carga de archivo JavaScript para inicializar la aplicación Flutter -->
   <script src="flutter_bootstrap.js" async></script>
 </body>
+
 </html>

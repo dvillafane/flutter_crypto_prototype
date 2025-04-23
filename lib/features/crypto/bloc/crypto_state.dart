@@ -9,10 +9,12 @@ import '../../../core/models/crypto_detail.dart';
 // Clase base para los estados del BLoC
 abstract class CryptoState extends Equatable {
   const CryptoState();
+  
   @override
   List<Object?> get props => [];
 }
 
+// Estado que indica que se están cargando las criptomonedas
 class CryptoLoading extends CryptoState {}
 
 // Estado cuando las criptomonedas han sido cargadas correctamente
@@ -30,8 +32,11 @@ class CryptoLoaded extends CryptoState {
 
   /// Conjunto de símbolos marcados como favoritos por el usuario
   final bool showFavorites;
+
   final String sortCriteria;
-  final bool isUpdating; // Nueva propiedad para indicar actualización en curso
+
+  /// Nueva propiedad para indicar si hay una actualización en curso
+  final bool isUpdating;
 
   /// Constructor que recibe todos los campos obligatorios.
   /// favoriteSymbols y showFavorites tienen valores por defecto.
@@ -81,9 +86,12 @@ class CryptoLoaded extends CryptoState {
       ];
 }
 
+// Estado cuando ocurre un error en la carga de criptomonedas
 class CryptoError extends CryptoState {
   final String message;
+
   const CryptoError({required this.message});
+
   @override
   List<Object?> get props => [message];
 }
