@@ -1,7 +1,9 @@
-importScripts('https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js');
-importScripts('https://www.gstatic.com/firebasejs/10.14.1/firebase-messaging.js');
+// Primero importar
+importScripts('https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js');
+importScripts('https://www.gstatic.com/firebasejs/10.14.1/firebase-messaging-compat.js');
 
-const firebaseConfig = {
+// Usar compat
+firebase.initializeApp({
   apiKey: "YOUR_API_KEY",
   authDomain: "YOUR_AUTH_DOMAIN",
   projectId: "YOUR_PROJECT_ID",
@@ -9,17 +11,17 @@ const firebaseConfig = {
   messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
   appId: "YOUR_APP_ID",
   measurementId: "YOUR_MEASUREMENT_ID"
-};
+});
 
-firebase.initializeApp(firebaseConfig);
 const messaging = firebase.messaging();
 
 messaging.onBackgroundMessage((payload) => {
-  console.log('Notificación en segundo plano:', payload);
+  console.log('[firebase-messaging-sw.js] Received background message ', payload);
   const notificationTitle = payload.notification.title;
   const notificationOptions = {
     body: payload.notification.body,
-    icon: '/favicon.png'
+    icon: '/icons/Icon-192.png',
   };
+
   self.registration.showNotification(notificationTitle, notificationOptions);
 });

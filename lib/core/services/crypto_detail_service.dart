@@ -4,6 +4,8 @@ import 'package:http/http.dart'
     as http; // Cliente HTTP para hacer solicitudes a la API
 import 'package:cloud_firestore/cloud_firestore.dart'; // Firestore para almacenamiento en la nube
 import 'package:flutter_dotenv/flutter_dotenv.dart'; // Para acceder a variables de entorno
+import 'package:flutter/foundation.dart'
+    show kIsWeb; // Para detectar si se ejecuta en web
 import '../models/crypto_detail.dart'; // Modelo de datos
 
 // Servicio para obtener detalles de criptomonedas
@@ -11,8 +13,10 @@ class CryptoDetailService {
   // Instancia de Firestore
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
-  // URL base de la API de CoinMarketCap
+  // URL base de la API de CoinMarketCap (usada en móvil)
   final String coinMarketCapBaseUrl = 'https://pro-api.coinmarketcap.com';
+  // URL base del servidor proxy (usada en web)
+  final String proxyBaseUrl = 'http://localhost:3000/api';
 
   // Clave API obtenida desde las variables de entorno
   final String apiKey =
@@ -22,11 +26,15 @@ class CryptoDetailService {
   Future<List<CryptoDetail>> fetchTop100CryptoDetails() async {
     // Encabezado con la API key
     final headers = {'X-CMC_PRO_API_KEY': apiKey};
+
+    // Determina la URL base según la plataforma (web o móvil)
+    final baseUrl = kIsWeb ? proxyBaseUrl : coinMarketCapBaseUrl;
     // Construye la URL con parámetros para obtener el top 100
     final listingsUrl = Uri.parse(
-      '$coinMarketCapBaseUrl/v1/cryptocurrency/listings/latest?start=1&limit=100&convert=USD',
+      '$baseUrl/cryptocurrency/listings/latest?start=1&limit=100&convert=USD',
     );
-    // Solicitud GET a la API
+
+    // Solicitud GET a la API (o al proxy en el caso de web)
     final response = await http.get(listingsUrl, headers: headers);
 
     // Si la solicitud fue exitosa (código 200)
@@ -34,6 +42,11 @@ class CryptoDetailService {
       // Decodifica el cuerpo de la respuesta
       final listingsData = json.decode(response.body)['data'];
       final List<CryptoDetail> cryptoDetails = [];
+
+      // Verifica si listingsData es válido
+      if (listingsData == null) {
+        throw Exception('Datos no encontrados en la respuesta de la API');
+      }
 
       // Recorre cada criptomoneda recibida
       for (final coinData in listingsData) {
@@ -88,9 +101,9 @@ class CryptoDetailService {
       // Devuelve la lista de objetos CryptoDetail
       return cryptoDetails;
     } else {
-      // Si hubo error en la solicitud, lanza una excepción con el código de estado
+      // Si hubo error en la solicitud, lanza una excepción con más detalles
       throw Exception(
-        'Error al obtener datos de CoinMarketCap: ${response.statusCode}',
+        'Error al obtener datos: ${response.statusCode} - ${response.body}',
       );
     }
   }

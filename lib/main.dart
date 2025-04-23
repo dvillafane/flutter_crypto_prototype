@@ -47,6 +47,10 @@ class MyApp extends StatefulWidget {
 }
 
 class _MyAppState extends State<MyApp> {
+  // Agregar un GlobalKey para el ScaffoldMessenger
+  final GlobalKey<ScaffoldMessengerState> _scaffoldMessengerKey =
+      GlobalKey<ScaffoldMessengerState>();
+
   @override
   void initState() {
     super.initState();
@@ -59,6 +63,8 @@ class _MyAppState extends State<MyApp> {
     } else {
       // Configurar Firebase Messaging para la web
       setupWebMessaging();
+      // Agregar listener para notificaciones en primer plano en la web
+      setupForegroundMessages();
     }
   }
 
@@ -66,17 +72,56 @@ class _MyAppState extends State<MyApp> {
     final messaging = FirebaseMessaging.instance;
     // Solicitar permisos para notificaciones en la web
     await messaging.requestPermission(alert: true, badge: true, sound: true);
-    // Obtener y enviar token en la web
-    String? token = await messaging.getToken();
+    // Obtener y enviar token en la web con VAPID key
+    String? token = await messaging.getToken(
+      vapidKey:
+          dotenv.env['VAPID_KEY'] ?? '', // Carga la clave VAPID desde .env
+    );
     if (token != null) {
       debugPrint('Web FCM Token: $token');
       await enviarTokenAFirestore(token);
+    } else {
+      debugPrint('No se pudo obtener el token FCM para la web.');
     }
     // Escuchar renovaciones de token
-    messaging.onTokenRefresh.listen((newToken) async {
-      debugPrint('Web FCM Token renovado: $newToken');
-      await enviarTokenAFirestore(newToken);
-    });
+    messaging.onTokenRefresh
+        .listen((newToken) async {
+          debugPrint('Web FCM Token renovado: $newToken');
+          await enviarTokenAFirestore(newToken);
+        })
+        .onError((error) {
+          debugPrint('Error al renovar el token FCM: $error');
+        });
+  }
+
+  // Método para manejar notificaciones en primer plano en la web
+  void setupForegroundMessages() {
+    FirebaseMessaging.onMessage
+        .listen((RemoteMessage message) {
+          debugPrint(
+            'Notificación en primer plano recibida: ${message.notification?.title}',
+          );
+          if (message.notification != null) {
+            // Usar el GlobalKey para mostrar el SnackBar
+            _scaffoldMessengerKey.currentState?.showSnackBar(
+              SnackBar(
+                content: Text(
+                  '${message.notification?.title}: ${message.notification?.body}',
+                ),
+                duration: const Duration(seconds: 5),
+                action: SnackBarAction(
+                  label: 'Cerrar',
+                  onPressed: () {
+                    _scaffoldMessengerKey.currentState?.hideCurrentSnackBar();
+                  },
+                ),
+              ),
+            );
+          }
+        })
+        .onError((error) {
+          debugPrint('Error al recibir notificación en primer plano: $error');
+        });
   }
 
   @override
@@ -86,6 +131,8 @@ class _MyAppState extends State<MyApp> {
 
     return MaterialApp(
       title: 'Cyptos 2.0 Demo',
+      // Asignar el GlobalKey al ScaffoldMessenger
+      scaffoldMessengerKey: _scaffoldMessengerKey,
       theme: ThemeData(
         brightness: Brightness.dark,
         primaryColor: Colors.black,
