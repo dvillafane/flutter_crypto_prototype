@@ -47,6 +47,10 @@ class MyApp extends StatefulWidget {
 }
 
 class _MyAppState extends State<MyApp> {
+  // Agregar un GlobalKey para el ScaffoldMessenger
+  final GlobalKey<ScaffoldMessengerState> _scaffoldMessengerKey =
+      GlobalKey<ScaffoldMessengerState>();
+
   @override
   void initState() {
     super.initState();
@@ -59,6 +63,8 @@ class _MyAppState extends State<MyApp> {
     } else {
       // Configurar Firebase Messaging para la web
       setupWebMessaging();
+      // Agregar listener para notificaciones en primer plano en la web
+      setupForegroundMessages();
     }
   }
 
@@ -88,6 +94,36 @@ class _MyAppState extends State<MyApp> {
         });
   }
 
+  // Método para manejar notificaciones en primer plano en la web
+  void setupForegroundMessages() {
+    FirebaseMessaging.onMessage
+        .listen((RemoteMessage message) {
+          debugPrint(
+            'Notificación en primer plano recibida: ${message.notification?.title}',
+          );
+          if (message.notification != null) {
+            // Usar el GlobalKey para mostrar el SnackBar
+            _scaffoldMessengerKey.currentState?.showSnackBar(
+              SnackBar(
+                content: Text(
+                  '${message.notification?.title}: ${message.notification?.body}',
+                ),
+                duration: const Duration(seconds: 5),
+                action: SnackBarAction(
+                  label: 'Cerrar',
+                  onPressed: () {
+                    _scaffoldMessengerKey.currentState?.hideCurrentSnackBar();
+                  },
+                ),
+              ),
+            );
+          }
+        })
+        .onError((error) {
+          debugPrint('Error al recibir notificación en primer plano: $error');
+        });
+  }
+
   @override
   Widget build(BuildContext context) {
     final screenWidth = MediaQuery.of(context).size.width;
@@ -95,6 +131,8 @@ class _MyAppState extends State<MyApp> {
 
     return MaterialApp(
       title: 'Cyptos 2.0 Demo',
+      // Asignar el GlobalKey al ScaffoldMessenger
+      scaffoldMessengerKey: _scaffoldMessengerKey,
       theme: ThemeData(
         brightness: Brightness.dark,
         primaryColor: Colors.black,
