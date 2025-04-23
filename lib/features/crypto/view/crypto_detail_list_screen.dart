@@ -340,16 +340,13 @@ class CryptoDetailListScreenState extends State<CryptoDetailListScreen> {
 
     // Obtener el ancho de la pantalla para decidir el diseño
     final screenWidth = MediaQuery.of(context).size.width;
-// Punto de corte para considerar una pantalla "web"
-    const gridBreakpoint = 700; // Nuevo punto de corte para usar GridView
+    const gridBreakpoint = 700; // Punto de corte para usar GridView
 
     // Si el ancho es mayor o igual a gridBreakpoint, usamos GridView; si no, ListView (móvil)
     if (screenWidth >= gridBreakpoint) {
       // Calcula el número de columnas dinámicamente según el ancho de pantalla
       final crossAxisCount =
-          screenWidth < 900
-              ? 2 // 2 columnas si <900px
-              : 3; // Máximo 3 columnas si >=900px
+          screenWidth < 900 ? 2 : 3; // 2 columnas si <900px, 3 si >=900px
 
       return GridView.builder(
         padding: const EdgeInsets.all(8.0),
@@ -364,113 +361,136 @@ class CryptoDetailListScreenState extends State<CryptoDetailListScreen> {
         itemBuilder: (context, i) {
           final detail = filtered[i];
           final isFav = state.favoriteSymbols.contains(detail.symbol);
-          return Card(
-            color: Colors.grey[900],
-            child: Padding(
-              padding: const EdgeInsets.all(8.0),
-              child: LayoutBuilder(
-                builder: (context, constraints) {
-                  // Obtiene el ancho disponible de la tarjeta
-                  final cardWidth = constraints.maxWidth;
+          return GestureDetector(
+            // Agregamos GestureDetector para manejar onTap
+            onTap: () {
+              if (widget.isGuest) {
+                if (!_isSnackBarShown) {
+                  _isSnackBarShown = true;
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Para ver más detalles, inicia sesión'),
+                    ),
+                  );
+                  _debounceTimer?.cancel();
+                  _debounceTimer = Timer(const Duration(seconds: 5), () {
+                    setState(() {
+                      _isSnackBarShown = false;
+                    });
+                  });
+                }
+              } else {
+                _showCryptoDetailDialog(context, detail);
+              }
+            },
+            child: Card(
+              color: Colors.grey[900],
+              child: Padding(
+                padding: const EdgeInsets.all(8.0),
+                child: LayoutBuilder(
+                  builder: (context, constraints) {
+                    // Obtiene el ancho disponible de la tarjeta
+                    final cardWidth = constraints.maxWidth;
 
-                  // Ajusta dinámicamente los tamaños según el ancho de la tarjeta
-                  final imageSize =
-                      cardWidth * 0.08; // Tamaño de la imagen (8% del ancho)
-                  final fontSizeName =
-                      cardWidth * 0.05; // Tamaño del nombre (5% del ancho)
-                  final fontSizePrice =
-                      cardWidth * 0.04; // Tamaño del precio (4% del ancho)
-                  final fontSizeChange =
-                      cardWidth * 0.035; // Tamaño del cambio (3.5% del ancho)
-                  final iconSize =
-                      cardWidth *
-                      0.06; // Tamaño del ícono de favoritos (6% del ancho)
+                    // Ajusta dinámicamente los tamaños según el ancho de la tarjeta
+                    final imageSize =
+                        cardWidth * 0.08; // Tamaño de la imagen (8% del ancho)
+                    final fontSizeName =
+                        cardWidth * 0.05; // Tamaño del nombre (5% del ancho)
+                    final fontSizePrice =
+                        cardWidth * 0.04; // Tamaño del precio (4% del ancho)
+                    final fontSizeChange =
+                        cardWidth * 0.035; // Tamaño del cambio (3.5% del ancho)
+                    final iconSize =
+                        cardWidth *
+                        0.06; // Tamaño del ícono de favoritos (6% del ancho)
 
-                  return Row(
-                    children: [
-                      // Imagen del logo (responsiva)
-                      SizedBox(
-                        width: imageSize,
-                        height: imageSize,
-                        child: Image.network(
-                          detail.logoUrl,
-                          fit:
-                              BoxFit
-                                  .contain, // Ajusta la imagen para que no se desborde
-                          errorBuilder:
-                              (_, __, ___) => Icon(
-                                Icons.error,
-                                color: Colors.red,
-                                size: imageSize,
-                              ),
+                    return Row(
+                      children: [
+                        // Imagen del logo (responsiva)
+                        SizedBox(
+                          width: imageSize,
+                          height: imageSize,
+                          child: Image.network(
+                            detail.logoUrl,
+                            fit:
+                                BoxFit
+                                    .contain, // Ajusta la imagen para que no se desborde
+                            errorBuilder:
+                                (_, __, ___) => Icon(
+                                  Icons.error,
+                                  color: Colors.red,
+                                  size: imageSize,
+                                ),
+                          ),
                         ),
-                      ),
-                      const SizedBox(width: 10),
+                        const SizedBox(width: 10),
 
-                      // Información de la criptomoneda
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            // Nombre de la criptomoneda
-                            FittedBox(
-                              fit: BoxFit.scaleDown,
-                              child: Text(
-                                detail.name,
-                                style: TextStyle(
-                                  color: Colors.white,
-                                  fontSize: fontSizeName,
+                        // Información de la criptomoneda
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              // Nombre de la criptomoneda
+                              FittedBox(
+                                fit: BoxFit.scaleDown,
+                                child: Text(
+                                  detail.name,
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontSize: fontSizeName,
+                                  ),
                                 ),
                               ),
-                            ),
-                            // Precio con animación de color
-                            AnimatedDefaultTextStyle(
-                              duration: const Duration(milliseconds: 350),
-                              style: TextStyle(
-                                color:
-                                    state.priceColors[detail.symbol] ??
-                                    Colors.white70,
-                                fontSize: fontSizePrice,
-                              ),
-                              child: Text(
-                                '\$${numberFormat.format(detail.priceUsd)} USD',
-                              ),
-                            ),
-                            // Cambio porcentual en 24h
-                            FittedBox(
-                              fit: BoxFit.scaleDown,
-                              child: Text(
-                                '24h: ${detail.percentChange24h.toStringAsFixed(2)}%',
+                              // Precio con animación de color
+                              AnimatedDefaultTextStyle(
+                                duration: const Duration(milliseconds: 350),
                                 style: TextStyle(
                                   color:
-                                      detail.percentChange24h >= 0
-                                          ? Colors.green
-                                          : Colors.red,
-                                  fontSize: fontSizeChange,
+                                      state.priceColors[detail.symbol] ??
+                                      Colors.white70,
+                                  fontSize: fontSizePrice,
+                                ),
+                                child: Text(
+                                  '\$${numberFormat.format(detail.priceUsd)} USD',
                                 ),
                               ),
-                            ),
-                          ],
-                        ),
-                      ),
-
-                      // Botón de favoritos (si no es usuario invitado)
-                      if (!widget.isGuest)
-                        IconButton(
-                          icon: Icon(
-                            isFav ? Icons.favorite : Icons.favorite_border,
-                            color: isFav ? Colors.red : Colors.white70,
-                            size: iconSize,
-                          ),
-                          onPressed:
-                              () => context.read<CryptoBloc>().add(
-                                ToggleFavoriteSymbol(detail.symbol),
+                              // Cambio porcentual en 24h
+                              FittedBox(
+                                fit: BoxFit.scaleDown,
+                                child: Text(
+                                  '24h: ${detail.percentChange24h.toStringAsFixed(2)}%',
+                                  style: TextStyle(
+                                    color:
+                                        detail.percentChange24h >= 0
+                                            ? Colors.green
+                                            : Colors.red,
+                                    fontSize: fontSizeChange,
+                                  ),
+                                ),
                               ),
+                            ],
+                          ),
                         ),
-                    ],
-                  );
-                },
+
+                        // Botón de favoritos (si no es usuario invitado)
+                        if (!widget.isGuest)
+                          IconButton(
+                            icon: Icon(
+                              isFav ? Icons.favorite : Icons.favorite_border,
+                              color: isFav ? Colors.red : Colors.white70,
+                              size: iconSize,
+                            ),
+                            onPressed:
+                                () => context.read<CryptoBloc>().add(
+                                  ToggleFavoriteSymbol(detail.symbol),
+                                ),
+                          ),
+                      ],
+                    );
+                  },
+                ),
               ),
             ),
           );
