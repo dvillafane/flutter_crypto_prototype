@@ -1,94 +1,66 @@
 import 'dart:async';
 import 'dart:convert';
-import 'package:flutter/foundation.dart' show kIsWeb, debugPrint;
+import 'package:flutter/foundation.dart' show debugPrint;
 import 'package:web_socket_channel/web_socket_channel.dart';
-import 'package:web_socket_channel/io.dart';
-import 'package:web_socket_channel/html.dart';
+import 'websocket/websocket_factory.dart'; // ✅ Import condicional
 
 class WebSocketPricesService {
   WebSocketChannel? _channel;
   bool _isConnected = false;
   final StreamController<Map<String, double>> _pricesController =
       StreamController.broadcast();
-  // Controlador de stream para emitir precios actualizados. Se usa broadcast para múltiples escuchas.
 
   Stream<Map<String, double>> get pricesStream => _pricesController.stream;
-  // Getter para exponer el stream a otras clases.
 
   void connect() {
     if (_isConnected || _channel != null) return;
 
-    // Use platform-appropriate WebSocketChannel
-    if (kIsWeb) {
-      _channel = HtmlWebSocketChannel.connect(
-        Uri.parse('wss://stream.binance.com:9443/ws/!ticker@arr'),
-      );
-    } else {
-      _channel = IOWebSocketChannel.connect(
-        Uri.parse('wss://stream.binance.com:9443/ws/!ticker@arr'),
-      );
-    }
+    _channel = createWebSocketChannel('wss://stream.binance.com:9443/ws/!ticker@arr');
 
-    _isConnected = true; // Marca como conectado.
-    debugPrint('WebSocket conectado'); // Imprime que se ha conectado.
+    _isConnected = true;
+    debugPrint('WebSocket conectado');
 
     _channel!.stream.listen(
       (message) {
-        debugPrint(
-          'Datos recibidos del WebSocket: $message',
-        ); // Muestra los datos crudos recibidos.
+        debugPrint('Datos recibidos del WebSocket: $message');
 
         final List<dynamic> tickers = json.decode(message);
-        // Decodifica el mensaje JSON en una lista dinámica.
-
         final Map<String, double> parsedData = {};
-        // Crea un mapa para almacenar los precios parseados.
 
         for (var ticker in tickers) {
           final String symbol = ticker['s'].toString().toLowerCase();
-          // Obtiene el símbolo del par en minúsculas.
           final double price = double.tryParse(ticker['c'].toString()) ?? 0;
-          // Intenta convertir el precio a double; si falla, asigna 0.
-          parsedData[symbol] = price; // Añade el símbolo y el precio al mapa.
+          parsedData[symbol] = price;
         }
-
-        debugPrint(
-          'Datos parseados: $parsedData',
-        ); // Imprime los datos ya parseados.
 
         if (!_pricesController.isClosed) {
           _pricesController.add(parsedData);
-          // Emite los datos parseados a través del stream si no está cerrado.
         }
       },
       onError: (error) {
-        debugPrint('WebSocket error: $error'); // Muestra el error si ocurre.
-        disconnect(); // Desconecta si hay un error.
+        debugPrint('WebSocket error: $error');
+        disconnect();
       },
       onDone: () {
-        debugPrint(
-          'WebSocket cerrado por el servidor',
-        ); // Imprime cuando el servidor cierra la conexión.
-        disconnect(); // Desconecta cuando se termina el stream.
+        debugPrint('WebSocket cerrado por el servidor');
+        disconnect();
       },
-      cancelOnError: true, // Cancela automáticamente si hay un error.
+      cancelOnError: true,
     );
   }
 
   void disconnect() {
     if (_isConnected) {
-      _channel?.sink.close(); // Cierra el canal si está conectado.
-      _channel = null; // Elimina la referencia al canal.
-      _isConnected = false; // Marca como desconectado.
-      debugPrint('WebSocket desconectado'); // Informa que se ha desconectado.
+      _channel?.sink.close();
+      _channel = null;
+      _isConnected = false;
+      debugPrint('WebSocket desconectado');
     }
   }
 
   void dispose() {
-    disconnect(); // Desconecta el canal.
-    _pricesController.close(); // Cierra el controlador del stream.
-    debugPrint(
-      'WebSocketPricesService disposed',
-    ); // Imprime que el servicio ha sido eliminado.
+    disconnect();
+    _pricesController.close();
+    debugPrint('WebSocketPricesService disposed');
   }
 }
