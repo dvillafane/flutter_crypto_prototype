@@ -63,7 +63,6 @@ class _MyAppState extends State<MyApp> {
       obtenerYEnviarTokenFCM();
       obtenerYEnviarFID();
       listenTokenRefresh();
-      setupNotificationListeners();
     } else {
       // Configurar Firebase Messaging para la web
       setupWebMessaging();
