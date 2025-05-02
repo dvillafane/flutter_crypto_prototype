@@ -321,33 +321,19 @@ class CryptoBloc extends Bloc<CryptoEvent, CryptoState> {
         for (var crypto in newCryptos) {
           _previousPrices[crypto.symbol] = crypto.priceUsd;
         }
-        debugPrint('Emitting nuevos datos actualizados');
-
-        // Actualizamos el timestamp en Firestore
-        await FirebaseFirestore.instance.collection('crypto_updates').doc('last_update').set({
-          'timestamp': FieldValue.serverTimestamp(),
-        });
-
-        emit(currentState.copyWith(
-          cryptos: newCryptos,
-          priceColors: {for (var e in newCryptos) e.symbol: Colors.white},
-          isUpdating: false, // La actualización ha terminado
-        ));
+        // Actualizamos el estado
+        emit(currentState.copyWith(cryptos: newCryptos, isUpdating: false));
       } catch (e) {
         debugPrint('Error al actualizar criptomonedas: $e');
-        emit(currentState.copyWith(isUpdating: false)); // Volvemos al estado normal en caso de error
+        emit(CryptoError(message: e.toString()));
       }
     }
   }
 
-  // Método override para liberar recursos
   @override
   Future<void> close() {
+    _updateTimer?.cancel(); // Cancelamos el temporizador
     _pricesSubscription?.cancel();
-    _pricesSubscription = null;
-    _pricesService.dispose();
-    _updateTimer?.cancel();
-    debugPrint('CryptoBloc cerrado');
     return super.close();
   }
 }
