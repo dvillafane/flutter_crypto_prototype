@@ -32,8 +32,8 @@ Future<void> initializeNotifications() async {
       print('Notificación en primer plano: ${message.messageId}');
     }
 
-    // Solo mostrar si viene con contenido visual (notification)
-    if (message.notification != null) {
+    // Evitar duplicados en web: el navegador ya muestra la notificación
+    if (message.notification != null && !kIsWeb) {
       _showLocalNotification(message);
     }
   });

@@ -16,16 +16,29 @@ firebase.initializeApp({
 const messaging = firebase.messaging();
 
 // Configurar el comportamiento cuando se recibe una notificación en segundo plano
-messaging.onBackgroundMessage((payload) => {
-  // Imprimir la carga útil del mensaje en la consola para depuración
-  console.log('[firebase-messaging-sw.js] Received background message ', payload);
-  
-  // Extraer el título y el cuerpo de la notificación del payload
-  const notificationTitle = payload.notification.title;
-  const notificationOptions = {
-    body: payload.notification.body, // Cuerpo de la notificación
-  };
+messaging.onBackgroundMessage(async (payload) => {
+  console.log('[firebase-messaging-sw.js] Received background message', payload);
 
-  // Mostrar la notificación en la pantalla del usuario
-  self.registration.showNotification(notificationTitle, notificationOptions);
+  const allClients = await self.clients.matchAll({
+    type: 'window',
+    includeUncontrolled: true,
+  });
+
+  let isAppInForeground = false;
+  for (const client of allClients) {
+    if (client.visibilityState === 'visible') {
+      isAppInForeground = true;
+      break;
+    }
+  }
+
+  // Evitar duplicado: si el payload ya contiene "notification", NO mostrarla otra vez
+  if (!isAppInForeground && !payload.notification) {
+    const notificationTitle = payload.data.title || 'Sin título';
+    const notificationOptions = {
+      body: payload.data.body || '',
+    };
+
+    self.registration.showNotification(notificationTitle, notificationOptions);
+  }
 });
