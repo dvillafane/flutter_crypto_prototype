@@ -8,7 +8,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 // Importa el servicio personalizado que maneja el almacenamiento/envío del token FCM a Firestore
-import '../../core/services/token_service.dart';
+import '../../services/token_service.dart';
 
 // Función que configura la mensajería web con Firebase Cloud Messaging
 Future<void> setupWebMessaging(GlobalKey<ScaffoldMessengerState> scaffoldMessengerKey) async {

@@ -6,8 +6,8 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'features/auth/login/view/login_screen.dart';
 import 'features/home/view/home_screen.dart';
-import 'features/notification_web/notification_web_initializer.dart';
-import 'features/notification_mobile/notification_mobile_initializer.dart';
+import 'core/notification/notification_web/notification_web_initializer.dart';
+import 'core/notification/notification_mobile/notification_mobile_initializer.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();

@@ -3,9 +3,9 @@ import 'package:firebase_messaging/firebase_messaging.dart';
 // Importa funcionalidades del sistema como la orientación de pantalla
 import 'package:flutter/services.dart';
 // Importa un servicio personalizado para inicializar notificaciones locales
-import '../../../core/services/noti_service.dart';
+import '../../services/notification_service.dart';
 // Importa servicios para manejar y enviar el token de FCM
-import '../../../core/services/token_service.dart';
+import '../../../../core/services/token_service.dart';
 
 
 // Función para inicializar notificaciones móviles (Android/iOS)
