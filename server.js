@@ -21,7 +21,7 @@ app.use(cors());
 app.use(express.json());
 
 // Define un endpoint para reenviar solicitudes a CoinMarketCap
-app.get('/api/cryptocurrency/listings/latest', async (req, res) => {
+app.get('/api/v1/cryptocurrency/listings/latest', async (req, res) => {
     try {
         // Verifica si la clave API está disponible
         if (!apiKey) {
