@@ -37,34 +37,28 @@ class LoginView extends StatefulWidget {
 
 // Clase de estado de la vista de login.
 class _LoginViewState extends State<LoginView> {
-  // Llave global para el formulario, necesaria para la validación y manejo del estado.
   final _formKey = GlobalKey<FormState>();
-  // Variables para almacenar el correo y contraseña ingresados.
   String _email = '';
   String _password = '';
 
-  // Definición de colores de fondo y de tarjetas para mantener la consistencia en el tema.
+  final FocusNode _emailFocusNode = FocusNode();
+  final FocusNode _passwordFocusNode = FocusNode();
+
   static const backgroundColor = Color(0xFF121212);
   static const cardColor = Color(0xFF1E1E1E);
 
   @override
   Widget build(BuildContext context) {
-    // Obtiene el ancho de la pantalla para ajustar el contenido de forma responsiva.
     final screenWidth = MediaQuery.of(context).size.width;
     final maxContentWidth = screenWidth > 600 ? 400.0 : screenWidth * 0.9;
 
     return Scaffold(
-      backgroundColor: backgroundColor, // Fondo oscuro de la pantalla.
-      // BlocListener para reaccionar a los cambios de estado del LoginBloc.
+      backgroundColor: backgroundColor,
       body: BlocListener<LoginBloc, LoginState>(
         listener: (context, state) {
           if (state is LoginFailure) {
-            // Si falla el login, se muestra un SnackBar con el mensaje de error.
-            ScaffoldMessenger.of(
-              context,
-            ).showSnackBar(SnackBar(content: Text(state.error)));
+            ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(state.error)));
           } else if (state is LoginSuccess) {
-            // Si el login es exitoso, se redirige a la pantalla principal y se elimina el historial de navegación.
             Navigator.pushAndRemoveUntil(
               context,
               MaterialPageRoute(builder: (_) => const HomeScreen()),
@@ -74,86 +68,55 @@ class _LoginViewState extends State<LoginView> {
         },
         child: SafeArea(
           child: Center(
-            // ConstrainedBox limita el ancho máximo del contenido para pantallas más grandes.
             child: ConstrainedBox(
               constraints: BoxConstraints(maxWidth: maxContentWidth),
               child: SingleChildScrollView(
-                physics:
-                    const ClampingScrollPhysics(), // Evita scroll innecesario.
+                physics: const ClampingScrollPhysics(),
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
-                    // Muestra el logo de la aplicación.
-                    Image.asset(
-                      'assets/icon/app_icon_removebg.png',
-                      width: 100,
-                      height: 100,
-                      fit: BoxFit.contain,
-                    ),
+                    Image.asset('assets/icon/app_icon_removebg.png', width: 100, height: 100),
                     const SizedBox(height: 15),
-                    // Título de bienvenida.
-                    const Text(
-                      'Bienvenido',
-                      textAlign: TextAlign.center,
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 24,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
+                    const Text('Bienvenido', style: TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold)),
                     const SizedBox(height: 5),
-                    // Texto indicativo para iniciar sesión.
-                    const Text(
-                      'Inicia sesión para continuar',
-                      textAlign: TextAlign.center,
-                      style: TextStyle(color: Colors.grey, fontSize: 14),
-                    ),
+                    const Text('Inicia sesión para continuar', style: TextStyle(color: Colors.grey, fontSize: 14)),
                     const SizedBox(height: 20),
-
-                    // Tarjeta que contiene el formulario de login.
                     Card(
                       color: cardColor,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(15),
-                      ),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
                       elevation: 4,
                       child: Padding(
                         padding: const EdgeInsets.all(20.0),
-                        // Formulario que contiene los campos de email y contraseña.
                         child: Form(
                           key: _formKey,
                           child: Column(
                             children: [
-                              // Widget personalizado para el input del correo electrónico.
                               _EmailInput(
+                                focusNode: _emailFocusNode,
+                                nextFocusNode: _passwordFocusNode,
                                 onSaved: (value) => _email = value!.trim(),
                               ),
                               const SizedBox(height: 15),
-                              // Widget personalizado para el input de la contraseña.
                               _PasswordInput(
+                                focusNode: _passwordFocusNode,
                                 onSaved: (value) => _password = value!,
+                                onSubmit: () {
+                                  if (_formKey.currentState!.validate()) {
+                                    _formKey.currentState!.save();
+                                    context.read<LoginBloc>().add(LoginSubmitted(email: _email, password: _password));
+                                  }
+                                },
                               ),
                               const SizedBox(height: 15),
-                              // Bloque que reconstruye el botón de login en función del estado del Bloc.
                               BlocBuilder<LoginBloc, LoginState>(
                                 builder: (context, state) {
                                   return _LoginButton(
-                                    isLoading:
-                                        state
-                                            is LoginLoading, // Deshabilita el botón si se está cargando.
+                                    isLoading: state is LoginLoading,
                                     onPressed: () {
-                                      // Valida el formulario.
                                       if (_formKey.currentState!.validate()) {
-                                        // Guarda el estado actual de los campos del formulario.
                                         _formKey.currentState!.save();
-                                        // Envía el evento de login con los datos ingresados al Bloc.
-                                        context.read<LoginBloc>().add(
-                                          LoginSubmitted(
-                                            email: _email,
-                                            password: _password,
-                                          ),
-                                        );
+                                        context.read<LoginBloc>().add(LoginSubmitted(email: _email, password: _password));
                                       }
                                     },
                                   );
@@ -238,13 +201,20 @@ class _LoginViewState extends State<LoginView> {
 
 // Widget personalizado para el input del correo electrónico.
 class _EmailInput extends StatelessWidget {
-  final FormFieldSetter<String>
-  onSaved; // Callback para guardar el valor ingresado.
-  const _EmailInput({required this.onSaved});
+  final FormFieldSetter<String> onSaved;
+  final FocusNode focusNode;
+  final FocusNode nextFocusNode;
+
+  const _EmailInput({
+    required this.onSaved,
+    required this.focusNode,
+    required this.nextFocusNode,
+  });
 
   @override
   Widget build(BuildContext context) {
     return TextFormField(
+      focusNode: focusNode,
       style: const TextStyle(color: Colors.white),
       decoration: InputDecoration(
         filled: true,
@@ -270,20 +240,31 @@ class _EmailInput extends StatelessWidget {
         if (!value!.contains('@')) return 'Email inválido';
         return null;
       },
-      onSaved: onSaved, // Llama al callback pasado en el constructor.
+      onSaved: onSaved,
+      onFieldSubmitted: (_) {
+        // Cuando se presiona Enter, el foco pasa al siguiente campo (contraseña)
+        FocusScope.of(context).requestFocus(nextFocusNode);
+      },
     );
   }
 }
 
 // Widget personalizado para el input de la contraseña.
 class _PasswordInput extends StatelessWidget {
-  final FormFieldSetter<String>
-  onSaved; // Callback para guardar el valor ingresado.
-  const _PasswordInput({required this.onSaved});
+  final FormFieldSetter<String> onSaved;
+  final FocusNode focusNode;
+  final VoidCallback onSubmit;
+
+  const _PasswordInput({
+    required this.onSaved,
+    required this.focusNode,
+    required this.onSubmit,
+  });
 
   @override
   Widget build(BuildContext context) {
     return TextFormField(
+      focusNode: focusNode,
       style: const TextStyle(color: Colors.white),
       decoration: InputDecoration(
         filled: true,
@@ -303,9 +284,13 @@ class _PasswordInput extends StatelessWidget {
           borderSide: const BorderSide(color: Colors.white),
         ),
       ),
-      obscureText: true, // Oculta el texto para la contraseña.
+      obscureText: true,
       validator: (value) => value?.isEmpty ?? true ? 'Campo obligatorio' : null,
-      onSaved: onSaved, // Llama al callback pasado en el constructor.
+      onSaved: onSaved,
+      onFieldSubmitted: (_) {
+        // Al presionar Enter en el campo de contraseña, realiza el login
+        onSubmit();
+      },
     );
   }
 }
